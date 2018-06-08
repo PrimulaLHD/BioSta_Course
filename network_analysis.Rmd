@@ -1,0 +1,134 @@
+---
+title: "Network Analysis"
+author: "Hai-Dong  Li"
+date: "2018-6-1"
+output: html_document
+---
+
+# 1. Load packages 
+```{r load pkg} 
+load_and_install <- function(x) {
+    if(!require(x, character.only = TRUE)) {
+        install.packages(x)
+        library(x, character.only = TRUE)
+    }
+} # This function from Poislot et al 2017
+
+# All packages
+
+load_and_install("bipartite")
+load_and_install("dplyr")
+load_and_install("vegan")
+load_and_install("igraph")
+library(printr)
+
+```
+
+# 2. Imputing data    
+This dataset (Schleuning et al. 2011) recorded fruit removal from 33 plant species in different forest strata (canopy,midstory, understory) and habitats (primary and secondary forest) with a standardized sampling design (88 frugivore species, 3447 interactions in 924 observation hours).   
+
+```{r input data}
+setwd("C:/Dataset/LearningR/Seminar_BioStat/Network") 
+netdata <- read.csv("DispersalNet.csv",row.names = 1)
+str(netdata)
+
+```
+
+# 3. Ploting the network
+```{r plot web}
+op <- par(xpd = T) #allow plotting outside the plot
+plotweb(netdata)
+par(op)
+
+visweb(netdata,circles = T)
+
+ig<-graph_from_incidence_matrix(netdata, weighted = TRUE)
+ig
+vertex_attr(ig)$color<-rep("#FF9C0B", length(V(ig)))
+vertex_attr(ig)$color[grep(pattern = "FALSE", vertex_attr(ig)$type)]<-"#1C912C"
+vertex_attr(ig)$color 
+
+l<-layout_with_dh(ig)
+plot(ig, vertex.color=vertex_attr(ig)$cor,vertex.label=NA,
+     vertex.size=0.3*igraph::degree(ig),
+     edge.width=3*(edge_attr(ig)$weight)/500, 
+     edge.color="grey50", 
+     edge.curved=0.3,
+     layout=l)
+
+```
+
+# 4. Network metrices
+      
+
+```{r networklevel}
+net_level <- as.data.frame(networklevel(Safariland, index="ALLBUTDD"))
+colnames(net_level) <- c("Value")
+net_level
+
+```
+
+## 4.1 Specialization  
+```{r}
+H2fun(netdata) # network level
+grouplevel(netdata,index = "generality")
+
+```
+
+
+## 4.2 Nestedness  
+```{r}
+Nest_ob <- nested(netdata,method = "NODF2")
+nulls <- nullmodel(netdata, N=100, method="r2d")
+nested.nulls <- sapply(nulls, function(x) nested (x, method = "NODF2"))
+
+zscore_nest <- (Nest_ob-mean(nested.nulls))/sd(nested.nulls)
+zscore_nest
+
+plot(density(nested.nulls), xlim=c(min(Nest_ob, min(nested.nulls)), max(Nest_ob, max(nested.nulls))), 
+		main="comparison of observed with null model Patefield")
+	abline(v=Nest_ob, col="red", lwd=2)    
+	
+praw <- sum(nested.nulls>Nest_ob) / length(nested.nulls)
+ifelse(praw > 0.5, 1-praw, praw) #  get P-value
+
+```
+
+## 4.3 Modularity  
+
+```{r}
+M <- computeModules(netdata)
+Q <- M@likelihood
+Q
+plotModuleWeb(M, displayAlabels = T)
+```
+
+
+# 5. Species level  
+
+```{r degree}
+specieslevel(netdata, index="ALLBUTD")
+degreedistr(netdata)  
+```
+
+```{r specilaization}
+dfun(netdata) # gives d-values for the lower trophic level
+dfun(t(netdata)) #gives d-values for the higher trophic level
+
+```
+
+
+# Reference
+
+[1] Dormann, C.F., Fruend, J., Bluethgen, N. & Gruber B. 2009. Indices, graphs and null models:analyzing bipartite ecological networks. The Open Ecology Journal, 2, 7-24.
+
+[2] Dormann, C.F., Gruber B. & Fruend, J. (2008). Introducing the bipartite Package: AnalysingEcological Networks. R news Vol 8/2, 8 - 11.  
+
+[3] Dormann, C.F. (2011). How to be a specialist? Quantifying specialisation in pollination networks. Network Biology 1, 1 - 20.   
+
+[4] Blüthgen, N., Menzel, F. and Blüthgen, N. (2006) Measuring specialization in species interaction networks. BMC Ecology 6, 12  
+[5] Schleuning, M., N. Blüthgen, M. Flörchinger, J. Braun, H. M. Schaefer, and K. Böhning-Gaese. (2011) Specialization and interaction strength in a tropical plant–frugivore network differ among forest strata. Ecology 92:26-36.  
+
+
+
+
