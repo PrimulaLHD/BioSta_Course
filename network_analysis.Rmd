@@ -24,7 +24,7 @@ library(printr)
 
 ```
 
-# 2. Imputing data    
+# 2. Inputing data    
 This dataset (Schleuning et al. 2011) recorded fruit removal from 33 plant species in different forest strata (canopy,midstory, understory) and habitats (primary and secondary forest) with a standardized sampling design (88 frugivore species, 3447 interactions in 924 observation hours).   
 
 ```{r input data}
