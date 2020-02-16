@@ -37,7 +37,7 @@ str(netdata)
 # 3. Ploting the network
 ```{r plot web}
 op <- par(xpd = T) #allow plotting outside the plot
-plotweb(netdata)
+plotweb(netdata) # bipartite network
 par(op)
 
 visweb(netdata,circles = T)
